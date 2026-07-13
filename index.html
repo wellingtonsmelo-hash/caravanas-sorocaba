@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Caravanas - Consulta Sorocaba</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS Library for reading and exporting Excel files -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbars and refined transitions */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gradient-to-r from-brand-900 to-brand-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20">
+                    <i class="fa-solid fa-bus-simple text-2xl text-amber-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight">Painel de Caravanas</h1>
+                    <p class="text-xs text-brand-100 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Gestão inteligente integrada com SOROCABA.xlsx
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Action Buttons in Header -->
+                <button onclick="document.getElementById('excel-file-input').click()" class="bg-white/10 hover:bg-white/20 text-white font-medium text-xs px-3.5 py-2 rounded-lg border border-white/10 flex items-center gap-2 smooth-transition">
+                    <i class="fa-solid fa-file-excel text-emerald-400 text-sm"></i>
+                    Carregar SOROCABA.xlsx
+                </button>
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden" onchange="handleFileSelect(event)">
+                
+                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm flex items-center gap-2 smooth-transition">
+                    <i class="fa-solid fa-file-arrow-down text-sm"></i>
+                    Exportar Base Atualizada
+                </button>
+                
+                <button onclick="resetData()" class="bg-slate-800/40 hover:bg-slate-800/60 text-slate-200 hover:text-white text-xs px-2.5 py-2 rounded-lg border border-white/5 flex items-center gap-1 smooth-transition" title="Restaurar base inicial">
+                    <i class="fa-solid fa-rotate"></i>
+                    Resetar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6">
+        
+        <!-- Toast Container (Notification Popup) -->
+        <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- Info alert banner / Upload trigger if empty -->
+        <div id="upload-banner" class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition">
+            <div class="flex items-start space-x-3">
+                <i class="fa-solid fa-circle-info text-brand-600 text-xl mt-0.5"></i>
+                <div>
+                    <h3 class="text-sm font-semibold text-brand-900">Base de dados ativa</h3>
+                    <p class="text-xs text-brand-700 mt-1">
+                        Utilizando dados de demonstração locais. Para consultar os dados da sua própria planilha, clique em <strong class="underline cursor-pointer" onclick="document.getElementById('excel-file-input').click()">Carregar SOROCABA.xlsx</strong> ou arraste o arquivo aqui.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span id="data-source-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-100 text-brand-800 border border-brand-200">
+                    Dados de Demonstração
+                </span>
+            </div>
+        </div>
+
+        <!-- Quick Stats Banner -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+                <div class="p-3 bg-brand-50 text-brand-600 rounded-lg">
+                    <i class="fa-solid fa-church text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Total Igrejas/Cenáculos</p>
+                    <p id="stat-total-churches" class="text-lg font-bold text-slate-900">-</p>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                    <i class="fa-solid fa-bus text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Total de Ônibus</p>
+                    <p id="stat-total-buses" class="text-lg font-bold text-slate-900">-</p>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <i class="fa-solid fa-location-dot text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Locais Definidos</p>
+                    <p id="stat-defined-places" class="text-lg font-bold text-slate-900">-</p>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+                <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                    <i class="fa-solid fa-clock text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Horários Definidos</p>
+                    <p id="stat-defined-times" class="text-lg font-bold text-slate-900">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Panel Grid: Column Left (Selector & Query Form) & Column Right (Interactive Data Table) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Panel: Query and Edit Box (5 Cols) -->
+            <section class="lg:col-span-5 flex flex-col gap-4">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col gap-5">
+                    
+                    <div>
+                        <h2 class="text-md font-bold text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-100">
+                            <i class="fa-solid fa-magnifying-glass text-brand-600"></i>
+                            Consulta e Atualização
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1.5">Escolha uma igreja abaixo para visualizar, atualizar e registrar as modificações.</p>
+                    </div>
+
+                    <!-- Dropdown Select for Church -->
+                    <div class="relative">
+                        <label for="church-selector" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                            Selecione o Cenáculo:
+                        </label>
+                        <div class="relative">
+                            <select id="church-selector" onchange="onChurchSelected()" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 cursor-pointer appearance-none smooth-transition">
+                                <option value="" disabled selected>-- Escolha um Cenáculo --</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 left-0 pl-3.5 flex items-center">
+                                <i class="fa-solid fa-church text-slate-400 text-sm"></i>
+                            </div>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 pr-3.5 flex items-center">
+                                <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Edit Fields -->
+                    <div id="query-result-card" class="opacity-60 pointer-events-none smooth-transition bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col gap-4">
+                        
+                        <div id="placeholder-message" class="text-center py-10">
+                            <i class="fa-solid fa-hand-pointer text-slate-300 text-4xl mb-3 animate-bounce"></i>
+                            <p class="text-sm font-semibold text-slate-400">Por favor, selecione um Cenáculo acima para habilitar a consulta e a edição.</p>
+                        </div>
+
+                        <!-- Real Edit Form (Hidden until loaded) -->
+                        <form id="edit-form" class="hidden flex flex-col gap-4" onsubmit="saveCurrentChurchData(event)">
+                            <div class="bg-brand-50 border border-brand-100 rounded-lg px-3.5 py-2 flex justify-between items-center">
+                                <span class="text-xs font-bold text-brand-800 uppercase tracking-wide">Cenáculo Ativo</span>
+                                <span id="active-church-name" class="text-sm font-extrabold text-brand-900">-</span>
+                            </div>
+
+                            <!-- Field 1: Qtd Ônibus -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1.5 flex justify-between">
+                                    <span>Quantidade de Ônibus:</span>
+                                    <span id="current-buses-badge" class="text-brand-600 font-extrabold"></span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="adjustBuses(-1)" class="w-10 h-10 bg-white border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold active:scale-95 smooth-transition">
+                                        <i class="fa-solid fa-minus"></i>
+                                    </button>
+                                    <input type="number" id="input-buses" min="0" max="99" class="flex-grow h-10 text-center bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-800 focus:ring-brand-500 focus:border-brand-500" required>
+                                    <button type="button" onclick="adjustBuses(1)" class="w-10 h-10 bg-white border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold active:scale-95 smooth-transition">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Field 2: Local de Saída -->
+                            <div>
+                                <label for="input-location" class="block text-xs font-bold text-slate-600 mb-1.5">Local de Saída:</label>
+                                <div class="relative">
+                                    <input type="text" id="input-location" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-brand-500 focus:border-brand-500 placeholder-slate-400" placeholder="Informe o local exato" required>
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                        <i class="fa-solid fa-map-location-dot text-slate-400 text-sm"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Field 3: Parada Adicional -->
+                            <div>
+                                <label for="input-stop" class="block text-xs font-bold text-slate-600 mb-1.5">Parada Adicional:</label>
+                                <div class="relative">
+                                    <input type="text" id="input-stop" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-brand-500 focus:border-brand-500 placeholder-slate-400" placeholder="Cidade ou ponto de encontro intermediário">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                        <i class="fa-solid fa-route text-slate-400 text-sm"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Field 4: Horário de Saída -->
+                            <div>
+                                <label for="input-time" class="block text-xs font-bold text-slate-600 mb-1.5">Horário de Saída:</label>
+                                <div class="relative">
+                                    <input type="text" id="input-time" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-brand-500 focus:border-brand-500 placeholder-slate-400" placeholder="Ex: 05:30 ou 06:00" required>
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                        <i class="fa-solid fa-clock text-slate-400 text-sm"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Save Button inside form -->
+                            <button type="submit" class="w-full mt-2 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg flex items-center justify-center gap-2 smooth-transition transform active:scale-[0.99]">
+                                <i class="fa-solid fa-circle-check"></i>
+                                Salvar Alterações
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Right Panel: Database List / Table View (7 Cols) -->
+            <section class="lg:col-span-7 flex flex-col gap-4">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
+                    
+                    <!-- Table Header & Filters -->
+                    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h2 class="text-md font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-database text-brand-600"></i>
+                                Registros Ativos
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-1">Busque rapidamente por qualquer coluna abaixo.</p>
+                        </div>
+                        <div class="relative w-full sm:w-64">
+                            <input type="text" id="table-search" oninput="filterTable()" placeholder="Pesquisar igreja..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-brand-500 focus:border-brand-500">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                <i class="fa-solid fa-search text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Table Container -->
+                    <div class="flex-grow overflow-x-auto overflow-y-auto max-h-[500px]">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/70 border-b border-slate-200 text-slate-500 text-[11px] font-bold uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10">
+                                    <th class="py-3 px-4">Cenáculo / Igreja</th>
+                                    <th class="py-3 px-4 text-center">Ônibus</th>
+                                    <th class="py-3 px-4">Local de Saída</th>
+                                    <th class="py-3 px-4">Parada Adicional</th>
+                                    <th class="py-3 px-4">Horário</th>
+                                    <th class="py-3 px-3 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="database-table-body" class="divide-y divide-slate-100 text-xs">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State for Table -->
+                    <div id="table-empty-state" class="hidden flex-col items-center justify-center py-20 px-4 text-center">
+                        <i class="fa-solid fa-folder-open text-slate-300 text-5xl mb-3"></i>
+                        <h4 class="text-sm font-bold text-slate-700">Nenhum resultado correspondente</h4>
+                        <p class="text-xs text-slate-400 mt-1">Tente ajustar a sua busca no campo acima.</p>
+                    </div>
+
+                    <!-- Table Footer Stats -->
+                    <div class="bg-slate-50 p-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                        <span>Total listado: <strong id="displayed-rows" class="text-slate-700">-</strong></span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle-info text-brand-600"></i> Clique na linha para consultar/editar</span>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Footer Area -->
+    <footer class="bg-slate-900 text-slate-400 py-6 text-xs border-t border-slate-800 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bus text-brand-500"></i>
+                <span class="font-semibold text-slate-300">SOROCABA Caravanas</span>
+                <span>•</span>
+                <span>Painel de Logística Integrada v2.0</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span>Clique e salve diretamente nos registros locais do seu navegador</span>
+                <a href="#" onclick="exportToExcel(); return false;" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-file-excel"></i>
+                    Exportar XLSX
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Key for localStorage
+        const STORAGE_KEY = 'SOROCABA_CARAVANAS_DATA_STORE';
+
+        // Mock Data reflecting typical parishes/churches in Sorocaba region for instant usability
+        const defaultMockData = [
+            { id: "1", cenaculo: "Catedral Sorocaba", onibus: 5, local: "Av. Dom Aguirre, 100 - Centro", parada: "Nenhuma", horario: "05:30" },
+            { id: "2", cenaculo: "Itavuvu", onibus: 3, local: "Av. Itavuvu, 2300 - Zona Norte", parada: "Posto Barbosa", horario: "05:45" },
+            { id: "3", cenaculo: "Wanel Ville", onibus: 2, local: "Av. Paulo Emanuel de Almeida, 120", parada: "Praça do Ipiranga", horario: "06:00" },
+            { id: "4", cenaculo: "Éden", onibus: 2, local: "Rua Bonifácio de Oliveira Cassú", parada: "Cajuru (Ponto de Encontro)", horario: "05:15" },
+            { id: "5", cenaculo: "Votorantim", onibus: 4, local: "Av. 31 de Março, Centro", parada: "Nenhuma", horario: "05:45" },
+            { id: "6", cenaculo: "Campolim", onibus: 1, local: "Pista de Caminhada Campolim", parada: "Shopping Iguatemi", horario: "06:15" },
+            { id: "7", cenaculo: "Brigadeiro Tobias", onibus: 1, local: "Praça Alberto Sarti", parada: "Igreja do Éden", horario: "05:00" },
+            { id: "8", cenaculo: "Júlio de Mesquita", onibus: 2, local: "Rua Maria Aparecida Rodrigues", parada: "Wanel Ville", horario: "05:50" },
+            { id: "9", cenaculo: "Ipanema", onibus: 2, local: "Av. Ipanema, 1800", parada: "Nenhuma", horario: "06:00" },
+            { id: "10", cenaculo: "Cajuru", onibus: 1, local: "Rua Paraná, Quadra Central", parada: "Trevo do Éden", horario: "05:25" }
+        ];
+
+        // App state
+        let caravanData = [];
+        let currentlySelectedId = null;
+        let isUsingUploadedFile = false;
+
+        // Initialize App on load
+        window.onload = function() {
+            initApp();
+            
+            // Add Drag and Drop listeners to document to capture SOROCABA.xlsx drops!
+            const dropZone = document.body;
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    processExcelFile(files[0]);
+                }
+            });
+        };
+
+        function initApp() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    caravanData = JSON.parse(stored);
+                    const fileFlag = localStorage.getItem(STORAGE_KEY + '_file');
+                    isUsingUploadedFile = fileFlag === 'true';
+                } catch(e) {
+                    caravanData = [...defaultMockData];
+                    isUsingUploadedFile = false;
+                }
+            } else {
+                caravanData = [...defaultMockData];
+                isUsingUploadedFile = false;
+            }
+
+            updateDataVisuals();
+            showToast("Sistema inicializado com sucesso!", "success");
+        }
+
+        function updateDataVisuals() {
+            populateChurchDropdown();
+            populateDataTable();
+            updateStatistics();
+            updateSourceBadge();
+        }
+
+        function updateSourceBadge() {
+            const badge = document.getElementById('data-source-badge');
+            const banner = document.getElementById('upload-banner');
+            if (isUsingUploadedFile) {
+                badge.className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 animate-pulse";
+                badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> Planilha Ativa (SOROCABA.xlsx)`;
+                banner.className = "bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+            } else {
+                badge.className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200";
+                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i> Dados de Demonstração`;
+                banner.className = "bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+            }
+        }
+
+        // Calculate and update top statistics
+        function updateStatistics() {
+            document.getElementById('stat-total-churches').textContent = caravanData.length;
+            
+            const totalBuses = caravanData.reduce((acc, curr) => acc + (Number(curr.onibus) || 0), 0);
+            document.getElementById('stat-total-buses').textContent = totalBuses;
+
+            const definedPlaces = caravanData.filter(item => item.local && item.local.trim().toLowerCase() !== 'nenhum' && item.local.trim() !== '').length;
+            document.getElementById('stat-defined-places').textContent = definedPlaces;
+
+            const definedTimes = caravanData.filter(item => item.horario && item.horario.trim() !== '').length;
+            document.getElementById('stat-defined-times').textContent = definedTimes;
+        }
+
+        function populateChurchDropdown() {
+            const selector = document.getElementById('church-selector');
+            // Retain placeholder
+            selector.innerHTML = '<option value="" disabled selected>-- Escolha um Cenáculo --</option>';
+
+            // Sort alphabetically for clean search experience
+            const sorted = [...caravanData].sort((a, b) => a.cenaculo.localeCompare(b.cenaculo));
+
+            sorted.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = item.cenaculo;
+                if (currentlySelectedId === item.id) {
+                    opt.selected = true;
+                }
+                selector.appendChild(opt);
+            });
+        }
+
+        function populateDataTable() {
+            const tbody = document.getElementById('database-table-body');
+            tbody.innerHTML = '';
+            
+            caravanData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-50 cursor-pointer smooth-transition ${currentlySelectedId === item.id ? 'bg-brand-50/70 border-l-4 border-l-brand-600' : ''}`;
+                tr.onclick = () => selectChurch(item.id);
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHTML(item.cenaculo)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="px-2.5 py-1 text-xs font-bold rounded-full ${item.onibus > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-400'}">
+                            ${item.onibus}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 truncate max-w-[150px]" title="${escapeHTML(item.local)}">${escapeHTML(item.local || '-')}</td>
+                    <td class="py-3 px-4 text-slate-600 truncate max-w-[120px]" title="${escapeHTML(item.parada)}">${escapeHTML(item.parada || '-')}</td>
+                    <td class="py-3 px-4 text-slate-700 font-medium">${escapeHTML(item.horario || '-')}</td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="event.stopPropagation(); selectChurch('${item.id}')" class="text-brand-600 hover:text-brand-800 font-bold text-xs bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded smooth-transition">
+                            Consultar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('displayed-rows').textContent = caravanData.length;
+            filterTable(); // Re-apply search filter if user is actively searching
+        }
+
+        function selectChurch(id) {
+            currentlySelectedId = id;
+            
+            // Mark active row visual styles
+            const rows = document.querySelectorAll('#database-table-body tr');
+            rows.forEach((row, idx) => {
+                const rowItem = caravanData[idx];
+                if (rowItem && rowItem.id === id) {
+                    row.className = "hover:bg-slate-50 cursor-pointer smooth-transition bg-brand-50/70 border-l-4 border-l-brand-600";
+                } else {
+                    row.className = "hover:bg-slate-50 cursor-pointer smooth-transition";
+                }
+            });
+
+            // Update selectors
+            const selector = document.getElementById('church-selector');
+            selector.value = id;
+
+            // Load to edit form
+            const item = caravanData.find(d => d.id === id);
+            if (item) {
+                // Enable card container
+                const card = document.getElementById('query-result-card');
+                card.classList.remove('opacity-60', 'pointer-events-none');
+                
+                document.getElementById('placeholder-message').classList.add('hidden');
+                
+                const form = document.getElementById('edit-form');
+                form.classList.remove('hidden');
+
+                // Fill inputs
+                document.getElementById('active-church-name').textContent = item.cenaculo;
+                document.getElementById('current-buses-badge').textContent = `${item.onibus} ônibus`;
+                document.getElementById('input-buses').value = item.onibus;
+                document.getElementById('input-location').value = item.local || '';
+                document.getElementById('input-stop').value = item.parada || '';
+                document.getElementById('input-time').value = item.horario || '';
+
+                // Scroll to query card if on mobile
+                if (window.innerWidth < 1024) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
+        function onChurchSelected() {
+            const selectedVal = document.getElementById('church-selector').value;
+            if (selectedVal) {
+                selectChurch(selectedVal);
+            }
+        }
+
+        function adjustBuses(amount) {
+            const input = document.getElementById('input-buses');
+            let val = parseInt(input.value) || 0;
+            val = Math.max(0, val + amount);
+            input.value = val;
+        }
+
+        function saveCurrentChurchData(e) {
+            e.preventDefault();
+            if (!currentlySelectedId) return;
+
+            const itemIndex = caravanData.findIndex(d => d.id === currentlySelectedId);
+            if (itemIndex !== -1) {
+                const oldItem = caravanData[itemIndex];
+                
+                const updatedItem = {
+                    ...oldItem,
+                    onibus: parseInt(document.getElementById('input-buses').value) || 0,
+                    local: document.getElementById('input-location').value.trim(),
+                    parada: document.getElementById('input-stop').value.trim(),
+                    horario: document.getElementById('input-time').value.trim()
+                };
+
+                // Update array state
+                caravanData[itemIndex] = updatedItem;
+                
+                // Save state to localStorage
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
+                localStorage.setItem(STORAGE_KEY + '_file', isUsingUploadedFile ? 'true' : 'false');
+
+                // Update views
+                updateDataVisuals();
+                
+                // Keep the active edit state fresh
+                selectChurch(currentlySelectedId);
+
+                showToast(`Dados de "${updatedItem.cenaculo}" salvos localmente!`, "success");
+            }
+        }
+
+        // Filter Table on Search Input
+        function filterTable() {
+            const query = document.getElementById('table-search').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#database-table-body tr');
+            let visibleCount = 0;
+
+            rows.forEach((row, index) => {
+                const item = caravanData[index];
+                if (!item) return;
+
+                const textToSearch = `${item.cenaculo} ${item.local} ${item.parada} ${item.horario} ${item.onibus}`.toLowerCase();
+                if (textToSearch.includes(query)) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            // Handle empty state visibility
+            const emptyState = document.getElementById('table-empty-state');
+            if (visibleCount === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            document.getElementById('displayed-rows').textContent = visibleCount;
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                processExcelFile(files[0]);
+            }
+        }
+
+        function processExcelFile(file) {
+            showToast("Lendo arquivo Excel...", "info");
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Grab the first sheet
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                    if (rawJson.length === 0) {
+                        showToast("Planilha vazia!", "error");
+                        return;
+                    }
+
+                    // Smart map columns based on dynamic headers
+                    const parsedData = smartMapExcelHeaders(rawJson);
+                    
+                    if (parsedData.length > 0) {
+                        caravanData = parsedData;
+                        isUsingUploadedFile = true;
+                        currentlySelectedId = null;
+
+                        // Save loaded state
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
+                        localStorage.setItem(STORAGE_KEY + '_file', 'true');
+
+                        // Reset UI with new data
+                        updateDataVisuals();
+
+                        // Close form editor until user chooses a new church
+                        document.getElementById('edit-form').classList.add('hidden');
+                        document.getElementById('placeholder-message').classList.remove('hidden');
+                        document.getElementById('query-result-card').classList.add('opacity-60', 'pointer-events-none');
+
+                        showToast(`Sucesso! ${parsedData.length} igrejas importadas.`, "success");
+                    } else {
+                        showToast("Colunas principais não encontradas no Excel.", "error");
+                    }
+
+                } catch (error) {
+                    console.error("Excel Read Error: ", error);
+                    showToast("Erro ao processar o Excel. Verifique a formatação.", "error");
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Normalizer helper to detect headers like 'Cenáculo', 'ônibus', 'local de saída' etc.
+        function smartMapExcelHeaders(jsonList) {
+            const result = [];
+            const firstRowKeys = Object.keys(jsonList[0]);
+
+            // Find best matches for our needed columns
+            let keyCenaculo = firstRowKeys.find(k => k.toLowerCase().match(/(cenaculo|cenáculo|igreja|paroquia|paróquia|grupo|localidade|nome)/)) || firstRowKeys[0];
+            let keyOnibus = firstRowKeys.find(k => k.toLowerCase().match(/(onibus|ônibus|qtd|quantidade|veiculo|veículo|buses)/)) || firstRowKeys[1];
+            let keyLocal = firstRowKeys.find(k => k.toLowerCase().match(/(local|saida|saída|partida|origem|embarque|ponto)/)) || firstRowKeys[2];
+            let keyParada = firstRowKeys.find(k => k.toLowerCase().match(/(parada|adicional|escala|conexao|conexão|intermediario)/)) || firstRowKeys[3];
+            let keyHorario = firstRowKeys.find(k => k.toLowerCase().match(/(horario|horário|hora|saída_hora|time)/)) || firstRowKeys[4];
+
+            jsonList.forEach((row, index) => {
+                // Ensure there is a valid church name, skip empty entries
+                const churchName = row[keyCenaculo] ? String(row[keyCenaculo]).trim() : '';
+                if (!churchName) return;
+
+                // Safe parsing of bus count
+                let busValue = 0;
+                if (row[keyOnibus] !== undefined) {
+                    const parsedNum = parseInt(row[keyOnibus]);
+                    if (!isNaN(parsedNum)) busValue = parsedNum;
+                }
+
+                result.push({
+                    id: String(index + 1),
+                    cenaculo: churchName,
+                    onibus: busValue,
+                    local: row[keyLocal] ? String(row[keyLocal]).trim() : '',
+                    parada: row[keyParada] ? String(row[keyParada]).trim() : '',
+                    horario: row[keyHorario] ? String(row[keyHorario]).trim() : ''
+                });
+            });
+
+            return result;
+        }
+
+        function exportToExcel() {
+            try {
+                showToast("Gerando nova planilha...", "info");
+
+                // Map clean Portuguese column titles for the export output
+                const formattedData = caravanData.map(item => ({
+                    "Cenáculo": item.cenaculo,
+                    "Quantidade de Ônibus": item.onibus,
+                    "Local de Saída": item.local,
+                    "Parada Adicional": item.parada,
+                    "Horário de Saída": item.horario
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(formattedData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Caravanas Sorocaba");
+
+                // Auto-adjust column widths dynamically for beauty
+                const maxColWidths = [];
+                formattedData.forEach(row => {
+                    Object.keys(row).forEach((key, colIndex) => {
+                        const cellValue = row[key] ? row[key].toString() : '';
+                        const headerLength = key.length;
+                        const cellLength = cellValue.length;
+                        const finalLen = Math.max(headerLength, cellLength) + 3;
+                        maxColWidths[colIndex] = Math.max(maxColWidths[colIndex] || 10, finalLen);
+                    });
+                });
+                worksheet['!cols'] = maxColWidths.map(w => ({ wch: w }));
+
+                // Save to user disk
+                XLSX.writeFile(workbook, "SOROCABA_Atualizado.xlsx");
+                showToast("Arquivo exportado com sucesso!", "success");
+
+            } catch (err) {
+                console.error("Export Error:", err);
+                showToast("Erro ao exportar base atualizada.", "error");
+            }
+        }
+
+        function resetData() {
+            if (confirm("Deseja realmente apagar todas as alterações locais e voltar para os dados padrão?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_KEY + '_file');
+                currentlySelectedId = null;
+                isUsingUploadedFile = false;
+                initApp();
+                
+                // Clear and reset UI Form back to placeholder
+                document.getElementById('edit-form').classList.add('hidden');
+                document.getElementById('placeholder-message').classList.remove('hidden');
+                document.getElementById('query-result-card').classList.add('opacity-60', 'pointer-events-none');
+            }
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let typeClasses = "bg-slate-800 text-white border-slate-700";
+            let icon = '<i class="fa-solid fa-bell"></i>';
+
+            if (type === "success") {
+                typeClasses = "bg-emerald-50 border border-emerald-200 text-emerald-900";
+                icon = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+            } else if (type === "error") {
+                typeClasses = "bg-red-50 border border-red-200 text-red-900";
+                icon = '<i class="fa-solid fa-circle-exclamation text-red-600"></i>';
+            } else if (type === "info") {
+                typeClasses = "bg-brand-50 border border-brand-200 text-brand-900";
+                icon = '<i class="fa-solid fa-circle-info text-brand-600"></i>';
+            }
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm max-w-sm pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300 ${typeClasses}`;
+            toast.innerHTML = `
+                <div class="text-base shrink-0">${icon}</div>
+                <div class="font-medium flex-grow">${message}</div>
+                <button class="text-slate-400 hover:text-slate-600 focus:outline-none shrink-0" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate In
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Auto-remove after 4.5 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-1');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4500);
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
