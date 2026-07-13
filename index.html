@@ -4,21 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Caravanas - Consulta Sorocaba</title>
+    <!-- Tailwind CSS para design responsivo e moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts para tipografia limpa -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
+    <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS Library for reading and exporting Excel files -->
+    <!-- Biblioteca SheetJS para manipulação inteligente de planilhas Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         brand: {
                             50: '#f0f7ff',
@@ -36,290 +35,304 @@
         }
     </script>
     <style>
-        /* Custom scrollbars and refined transitions */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .smooth-transition {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .smooth-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col selection:bg-brand-500 selection:text-white">
 
     <!-- Top Navigation Header -->
-    <header class="bg-gradient-to-r from-brand-900 to-brand-700 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <header class="bg-gradient-to-r from-brand-900 to-brand-700 text-white shadow-md sticky top-0 z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
-                <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20">
-                    <i class="fa-solid fa-bus-simple text-2xl text-amber-400"></i>
+                <div class="bg-white/10 p-2 rounded-xl border border-white/20">
+                    <i class="fa-solid fa-bus-simple text-xl text-amber-400 animate-pulse"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-extrabold tracking-tight">Painel de Caravanas</h1>
+                    <h1 class="text-lg font-extrabold tracking-tight">Painel de Caravanas</h1>
                     <p class="text-xs text-brand-100 flex items-center gap-1.5 mt-0.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Gestão inteligente integrada com SOROCABA.xlsx
+                        <span id="live-indicator" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                        <span id="live-indicator-text" class="font-medium">Carregando painel local...</span>
+                        <span id="refresh-timer" class="text-[10px] text-white/70 font-semibold bg-black/20 px-1.5 py-0.5 rounded ml-1 hidden"></span>
                     </p>
                 </div>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Action Buttons in Header -->
-                <button onclick="document.getElementById('excel-file-input').click()" class="bg-white/10 hover:bg-white/20 text-white font-medium text-xs px-3.5 py-2 rounded-lg border border-white/10 flex items-center gap-2 smooth-transition">
+                <!-- Botão Copiar Link WhatsApp -->
+                <button onclick="window.copyShareLink()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 smooth-transition">
+                    <i class="fa-solid fa-share-nodes text-sm"></i>
+                    <span>Link p/ WhatsApp</span>
+                </button>
+
+                <!-- Botão Sincronizar Nuvem -->
+                <button onclick="window.toggleCloudModal(true)" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 smooth-transition">
+                    <i class="fa-solid fa-cloud text-sm"></i>
+                    <span>Sincronizar Nuvem</span>
+                </button>
+                
+                <!-- Botão Importar Local -->
+                <button onclick="document.getElementById('excel-file-input').click()" class="bg-white/10 hover:bg-white/20 text-white font-medium text-xs px-3 py-2 rounded-lg border border-white/10 flex items-center gap-2 smooth-transition" title="Carregar planilha Excel local">
                     <i class="fa-solid fa-file-excel text-emerald-400 text-sm"></i>
-                    Carregar SOROCABA.xlsx
+                    <span>Carregar SOROCABA.xlsx</span>
                 </button>
-                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden" onchange="handleFileSelect(event)">
-                
-                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm flex items-center gap-2 smooth-transition">
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden">
+
+                <!-- Botão Exportar Backup -->
+                <button onclick="window.exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 smooth-transition">
                     <i class="fa-solid fa-file-arrow-down text-sm"></i>
-                    Exportar Base Atualizada
-                </button>
-                
-                <button onclick="resetData()" class="bg-slate-800/40 hover:bg-slate-800/60 text-slate-200 hover:text-white text-xs px-2.5 py-2 rounded-lg border border-white/5 flex items-center gap-1 smooth-transition" title="Restaurar base inicial">
-                    <i class="fa-solid fa-rotate"></i>
-                    Resetar
+                    <span>Backup XLSX</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Grid -->
+    <!-- Main Content Area -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6">
         
-        <!-- Toast Container (Notification Popup) -->
+        <!-- Toast Notification Container -->
         <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-        <!-- Info alert banner / Upload trigger if empty -->
+        <!-- Custom Confirm Modal Overlay (No alerts/confirms allowed) -->
+        <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none smooth-transition">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full shadow-2xl transform scale-95 smooth-transition">
+                <div class="flex items-start space-x-3.5">
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-full shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 id="confirm-title" class="text-base font-bold text-slate-900">Atenção</h3>
+                        <p id="confirm-message" class="text-xs text-slate-500 mt-2 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button id="confirm-cancel-btn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg smooth-transition">Cancelar</button>
+                    <button id="confirm-ok-btn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg smooth-transition">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Dinâmico Informativo de Status da Sincronização -->
         <div id="upload-banner" class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition">
             <div class="flex items-start space-x-3">
                 <i class="fa-solid fa-circle-info text-brand-600 text-xl mt-0.5"></i>
                 <div>
-                    <h3 class="text-sm font-semibold text-brand-900">Base de dados ativa</h3>
-                    <p class="text-xs text-brand-700 mt-1">
-                        Utilizando dados de demonstração locais. Para consultar os dados da sua própria planilha, clique em <strong class="underline cursor-pointer" onclick="document.getElementById('excel-file-input').click()">Carregar SOROCABA.xlsx</strong> ou arraste o arquivo aqui.
+                    <h3 class="text-sm font-semibold text-brand-900" id="source-title">Base de Dados Ativa</h3>
+                    <p class="text-xs text-brand-700 mt-1" id="source-description">
+                        Iniciando usando dados demonstrativos locais. Use o botão <strong>Sincronizar Nuvem</strong> para ler e salvar seus dados de forma colaborativa com o Google Sheets.
                     </p>
+                    <!-- Envio Inteligente do Excel para Nuvem -->
+                    <button id="btn-upload-to-cloud" onclick="window.uploadLocalExcelToCloud()" class="hidden mt-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow flex items-center gap-1.5 smooth-transition">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        Salvar esta Planilha Carregada na Nuvem (Google Sheets)
+                    </button>
                 </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <span id="data-source-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-100 text-brand-800 border border-brand-200">
-                    Dados de Demonstração
+                    Dados Locais
                 </span>
             </div>
         </div>
 
-        <!-- Quick Stats Banner -->
+        <!-- Quick Statistics -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-brand-50 text-brand-600 rounded-lg">
-                    <i class="fa-solid fa-church text-xl"></i>
+                <div class="p-2.5 bg-brand-50 text-brand-600 rounded-lg">
+                    <i class="fa-solid fa-church text-lg"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Total Igrejas/Cenáculos</p>
-                    <p id="stat-total-churches" class="text-lg font-bold text-slate-900">-</p>
+                    <p class="text-[11px] text-slate-400 font-medium">Cenáculos</p>
+                    <p id="stat-total-churches" class="text-base font-bold text-slate-950">-</p>
                 </div>
             </div>
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
-                    <i class="fa-solid fa-bus text-xl"></i>
+                <div class="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
+                    <i class="fa-solid fa-bus text-lg"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Total de Ônibus</p>
-                    <p id="stat-total-buses" class="text-lg font-bold text-slate-900">-</p>
+                    <p class="text-[11px] text-slate-400 font-medium">Total Ônibus</p>
+                    <p id="stat-total-buses" class="text-base font-bold text-slate-950">-</p>
                 </div>
             </div>
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <i class="fa-solid fa-location-dot text-xl"></i>
+                <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <i class="fa-solid fa-location-dot text-lg"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Locais Definidos</p>
-                    <p id="stat-defined-places" class="text-lg font-bold text-slate-900">-</p>
+                    <p class="text-[11px] text-slate-400 font-medium">Locais Definidos</p>
+                    <p id="stat-defined-places" class="text-base font-bold text-slate-950">-</p>
                 </div>
             </div>
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
-                    <i class="fa-solid fa-clock text-xl"></i>
+                <div class="p-2.5 bg-purple-50 text-purple-600 rounded-lg">
+                    <i class="fa-solid fa-clock text-lg"></i>
                 </div>
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Horários Definidos</p>
-                    <p id="stat-defined-times" class="text-lg font-bold text-slate-900">-</p>
+                    <p class="text-[11px] text-slate-400 font-medium">Horas Definidas</p>
+                    <p id="stat-defined-times" class="text-base font-bold text-slate-950">-</p>
                 </div>
             </div>
         </div>
 
-        <!-- Main Panel Grid: Column Left (Selector & Query Form) & Column Right (Interactive Data Table) -->
+        <!-- Main Layout Split Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- Left Panel: Query and Edit Box (5 Cols) -->
+            <!-- Left Column: Form/Query (5 cols) -->
             <section class="lg:col-span-5 flex flex-col gap-4">
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col gap-5">
                     
                     <div>
-                        <h2 class="text-md font-bold text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-100">
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-100">
                             <i class="fa-solid fa-magnifying-glass text-brand-600"></i>
-                            Consulta e Atualização
+                            Consulta e Ajuste Real-Time
                         </h2>
-                        <p class="text-xs text-slate-500 mt-1.5">Escolha uma igreja abaixo para visualizar, atualizar e registrar as modificações.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Selecione uma igreja para alterar seus dados na nuvem.</p>
                     </div>
 
-                    <!-- Dropdown Select for Church -->
-                    <div class="relative">
+                    <!-- Selector Dropdown -->
+                    <div>
                         <label for="church-selector" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                            Selecione o Cenáculo:
+                            Selecione a Igreja/Cenáculo:
                         </label>
                         <div class="relative">
-                            <select id="church-selector" onchange="onChurchSelected()" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 cursor-pointer appearance-none smooth-transition">
+                            <select id="church-selector" onchange="window.onChurchSelected()" class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer appearance-none smooth-transition">
                                 <option value="" disabled selected>-- Escolha um Cenáculo --</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 left-0 pl-3.5 flex items-center">
-                                <i class="fa-solid fa-church text-slate-400 text-sm"></i>
+                            <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                <i class="fa-solid fa-church text-slate-400 text-xs"></i>
                             </div>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 pr-3.5 flex items-center">
-                                <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Interactive Edit Fields -->
-                    <div id="query-result-card" class="opacity-60 pointer-events-none smooth-transition bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col gap-4">
+                    <!-- Interactive Form Container -->
+                    <div id="query-result-card" class="opacity-60 pointer-events-none smooth-transition bg-slate-50 border border-slate-100 rounded-xl p-4">
                         
                         <div id="placeholder-message" class="text-center py-10">
-                            <i class="fa-solid fa-hand-pointer text-slate-300 text-4xl mb-3 animate-bounce"></i>
-                            <p class="text-sm font-semibold text-slate-400">Por favor, selecione um Cenáculo acima para habilitar a consulta e a edição.</p>
+                            <i class="fa-solid fa-hand-pointer text-slate-300 text-3xl mb-2 animate-bounce"></i>
+                            <p class="text-xs font-semibold text-slate-400">Selecione uma igreja acima para iniciar a edição.</p>
                         </div>
 
-                        <!-- Real Edit Form (Hidden until loaded) -->
-                        <form id="edit-form" class="hidden flex flex-col gap-4" onsubmit="saveCurrentChurchData(event)">
-                            <div class="bg-brand-50 border border-brand-100 rounded-lg px-3.5 py-2 flex justify-between items-center">
-                                <span class="text-xs font-bold text-brand-800 uppercase tracking-wide">Cenáculo Ativo</span>
-                                <span id="active-church-name" class="text-sm font-extrabold text-brand-900">-</span>
+                        <!-- Main Edit Form -->
+                        <form id="edit-form" class="hidden flex flex-col gap-4" onsubmit="window.saveCurrentChurchData(event)">
+                            <div class="bg-brand-50 border border-brand-100 rounded-lg px-3 py-2 flex justify-between items-center">
+                                <span class="text-[10px] font-bold text-brand-800 uppercase">Cenáculo Selecionado</span>
+                                <span id="active-church-name" class="text-xs font-extrabold text-brand-900">-</span>
                             </div>
 
-                            <!-- Field 1: Qtd Ônibus -->
+                            <!-- Field: Buses -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 mb-1.5 flex justify-between">
                                     <span>Quantidade de Ônibus:</span>
                                     <span id="current-buses-badge" class="text-brand-600 font-extrabold"></span>
                                 </label>
                                 <div class="flex items-center gap-2">
-                                    <button type="button" onclick="adjustBuses(-1)" class="w-10 h-10 bg-white border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold active:scale-95 smooth-transition">
-                                        <i class="fa-solid fa-minus"></i>
+                                    <button type="button" onclick="window.adjustBuses(-1)" class="w-9 h-9 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-600 font-bold active:scale-95 smooth-transition">
+                                        <i class="fa-solid fa-minus text-xs"></i>
                                     </button>
-                                    <input type="number" id="input-buses" min="0" max="99" class="flex-grow h-10 text-center bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-800 focus:ring-brand-500 focus:border-brand-500" required>
-                                    <button type="button" onclick="adjustBuses(1)" class="w-10 h-10 bg-white border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold active:scale-95 smooth-transition">
-                                        <i class="fa-solid fa-plus"></i>
+                                    <input type="number" id="input-buses" min="0" max="99" class="flex-grow h-9 text-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:ring-brand-500" required>
+                                    <button type="button" onclick="window.adjustBuses(1)" class="w-9 h-9 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-600 font-bold active:scale-95 smooth-transition">
+                                        <i class="fa-solid fa-plus text-xs"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Field 2: Local de Saída -->
+                            <!-- Field: Location -->
                             <div>
                                 <label for="input-location" class="block text-xs font-bold text-slate-600 mb-1.5">Local de Saída:</label>
                                 <div class="relative">
-                                    <input type="text" id="input-location" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-brand-500 focus:border-brand-500 placeholder-slate-400" placeholder="Informe o local exato" required>
+                                    <input type="text" id="input-location" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-brand-500 placeholder-slate-400" placeholder="Informe o endereço/ponto" required>
                                     <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                                        <i class="fa-solid fa-map-location-dot text-slate-400 text-sm"></i>
+                                        <i class="fa-solid fa-map-location-dot text-slate-400 text-xs"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Field 3: Parada Adicional -->
+                            <!-- Field: Extra Stop -->
                             <div>
                                 <label for="input-stop" class="block text-xs font-bold text-slate-600 mb-1.5">Parada Adicional:</label>
                                 <div class="relative">
-                                    <input type="text" id="input-stop" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-brand-500 focus:border-brand-500 placeholder-slate-400" placeholder="Cidade ou ponto de encontro intermediário">
+                                    <input type="text" id="input-stop" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-brand-500 placeholder-slate-400" placeholder="Cidade ou parada adicional se houver">
                                     <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                                        <i class="fa-solid fa-route text-slate-400 text-sm"></i>
+                                        <i class="fa-solid fa-route text-slate-400 text-xs"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Field 4: Horário de Saída -->
+                            <!-- Field: Time -->
                             <div>
                                 <label for="input-time" class="block text-xs font-bold text-slate-600 mb-1.5">Horário de Saída:</label>
                                 <div class="relative">
-                                    <input type="text" id="input-time" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-brand-500 focus:border-brand-500 placeholder-slate-400" placeholder="Ex: 05:30 ou 06:00" required>
+                                    <input type="text" id="input-time" class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-brand-500 placeholder-slate-400" placeholder="Ex: 05:30 ou 06:15" required>
                                     <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                                        <i class="fa-solid fa-clock text-slate-400 text-sm"></i>
+                                        <i class="fa-solid fa-clock text-slate-400 text-xs"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Action Save Button inside form -->
-                            <button type="submit" class="w-full mt-2 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg flex items-center justify-center gap-2 smooth-transition transform active:scale-[0.99]">
-                                <i class="fa-solid fa-circle-check"></i>
-                                Salvar Alterações
+                            <!-- Submit Button -->
+                            <button type="submit" id="save-button" class="w-full mt-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-2.5 px-4 rounded-lg shadow-sm flex items-center justify-center gap-2 smooth-transition transform active:scale-[0.98]">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Salvar na Nuvem</span>
                             </button>
                         </form>
                     </div>
-
                 </div>
             </section>
 
-            <!-- Right Panel: Database List / Table View (7 Cols) -->
+            <!-- Right Column: Database Table (7 cols) -->
             <section class="lg:col-span-7 flex flex-col gap-4">
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                     
-                    <!-- Table Header & Filters -->
-                    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <!-- Search and title -->
+                    <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                            <h2 class="text-md font-bold text-slate-900 flex items-center gap-2">
+                            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                                 <i class="fa-solid fa-database text-brand-600"></i>
-                                Registros Ativos
+                                Registros Carregados
                             </h2>
-                            <p class="text-xs text-slate-500 mt-1">Busque rapidamente por qualquer coluna abaixo.</p>
                         </div>
-                        <div class="relative w-full sm:w-64">
-                            <input type="text" id="table-search" oninput="filterTable()" placeholder="Pesquisar igreja..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-brand-500 focus:border-brand-500">
-                            <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <div class="relative w-full sm:w-56">
+                            <input type="text" id="table-search" oninput="window.filterTable()" placeholder="Pesquisar igreja..." class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] focus:ring-brand-500">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 pl-2.5 flex items-center">
                                 <i class="fa-solid fa-search text-slate-400 text-xs"></i>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Scrollable Table Container -->
-                    <div class="flex-grow overflow-x-auto overflow-y-auto max-h-[500px]">
+                    <!-- Scrollable Table -->
+                    <div class="flex-grow overflow-x-auto max-h-[480px]">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-slate-50/70 border-b border-slate-200 text-slate-500 text-[11px] font-bold uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10">
-                                    <th class="py-3 px-4">Cenáculo / Igreja</th>
-                                    <th class="py-3 px-4 text-center">Ônibus</th>
-                                    <th class="py-3 px-4">Local de Saída</th>
-                                    <th class="py-3 px-4">Parada Adicional</th>
-                                    <th class="py-3 px-4">Horário</th>
-                                    <th class="py-3 px-3 text-right">Ação</th>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10">
+                                    <th class="py-2.5 px-3">Cenáculo</th>
+                                    <th class="py-2.5 px-2 text-center">Ônibus</th>
+                                    <th class="py-2.5 px-3">Local de Saída</th>
+                                    <th class="py-2.5 px-3">Parada</th>
+                                    <th class="py-2.5 px-3">Horário</th>
                                 </tr>
                             </thead>
                             <tbody id="database-table-body" class="divide-y divide-slate-100 text-xs">
-                                <!-- Populated dynamically -->
+                                <!-- Dynamic Rows -->
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Empty State for Table -->
-                    <div id="table-empty-state" class="hidden flex-col items-center justify-center py-20 px-4 text-center">
-                        <i class="fa-solid fa-folder-open text-slate-300 text-5xl mb-3"></i>
-                        <h4 class="text-sm font-bold text-slate-700">Nenhum resultado correspondente</h4>
-                        <p class="text-xs text-slate-400 mt-1">Tente ajustar a sua busca no campo acima.</p>
+                    <!-- Empty Table State -->
+                    <div id="table-empty-state" class="hidden flex-col items-center justify-center py-16 px-4 text-center">
+                        <i class="fa-solid fa-folder-open text-slate-300 text-4xl mb-2"></i>
+                        <h4 class="text-xs font-bold text-slate-700">Nenhum resultado correspondente</h4>
+                        <p class="text-[10px] text-slate-400 mt-1">Revise os filtros ou limpe a pesquisa.</p>
                     </div>
 
-                    <!-- Table Footer Stats -->
-                    <div class="bg-slate-50 p-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                        <span>Total listado: <strong id="displayed-rows" class="text-slate-700">-</strong></span>
-                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle-info text-brand-600"></i> Clique na linha para consultar/editar</span>
+                    <div class="bg-slate-50 p-2.5 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400 font-semibold">
+                        <span>Total: <strong id="displayed-rows" class="text-slate-600">-</strong></span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle-info text-brand-600"></i> Clique na linha para editar</span>
                     </div>
 
                 </div>
@@ -329,30 +342,68 @@
 
     </main>
 
-    <!-- Footer Area -->
-    <footer class="bg-slate-900 text-slate-400 py-6 text-xs border-t border-slate-800 mt-12">
+    <!-- Cloud Integration Configuration Modal -->
+    <div id="cloud-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none smooth-transition">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-lg w-full shadow-2xl transform scale-95 smooth-transition">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-bolt text-amber-500"></i>
+                    Conexão Google Planilhas
+                </h3>
+                <button onclick="window.toggleCloudModal(false)" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                Cole a <strong>URL do seu Aplicativo da Web</strong> (gerada no Google Apps Script) para conectar o painel à sua planilha oficial em nuvem.
+            </p>
+
+            <div class="flex flex-col gap-1.5 mb-4">
+                <label for="cloud-api-url" class="text-[10px] font-bold text-slate-600 uppercase tracking-wide">URL do Google Apps Script:</label>
+                <input type="url" id="cloud-api-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-brand-500">
+            </div>
+
+            <!-- Quick Access Shareable Link inside modal -->
+            <div id="modal-share-container" class="hidden flex-col gap-1.5 bg-brand-50 border border-brand-100 p-3 rounded-lg mb-4">
+                <span class="text-[10px] font-bold text-brand-800 uppercase">Link de Conexão Rápida para o Grupo:</span>
+                <div class="flex gap-1.5">
+                    <input type="text" id="share-link-input" readonly class="flex-grow px-2 py-1.5 bg-white border border-brand-100 rounded text-[10px] text-slate-500 focus:outline-none">
+                    <button onclick="window.copyShareLink()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-[10px] font-bold rounded-md smooth-transition">Copiar</button>
+                </div>
+                <p class="text-[9px] text-brand-600">Envie este link no WhatsApp. Quem abrir já entra conectado de forma automática!</p>
+            </div>
+
+            <div class="flex gap-2 justify-end">
+                <button onclick="window.toggleCloudModal(false)" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg smooth-transition">Fechar</button>
+                <button onclick="window.saveCloudApiAndConnect()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg smooth-transition">Salvar e Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Footer -->
+    <footer class="bg-slate-950 text-slate-400 py-6 text-xs border-t border-slate-900 mt-12 shrink-0">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-2">
-                <i class="fa-solid fa-bus text-brand-500"></i>
-                <span class="font-semibold text-slate-300">SOROCABA Caravanas</span>
+                <i class="fa-solid fa-bus text-amber-500 animate-pulse"></i>
+                <span class="font-bold text-slate-200">SOROCABA Caravanas</span>
                 <span>•</span>
-                <span>Painel de Logística Integrada v2.0</span>
+                <span id="footer-sync-status">Editando base de demonstração</span>
             </div>
-            <div class="flex items-center gap-4">
-                <span>Clique e salve diretamente nos registros locais do seu navegador</span>
-                <a href="#" onclick="exportToExcel(); return false;" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-file-excel"></i>
-                    Exportar XLSX
-                </a>
+            <div class="flex items-center gap-3">
+                <button onclick="window.resetDataToDefault()" class="text-slate-500 hover:text-red-400 font-semibold smooth-transition">
+                    Restaurar Padrão de Fábrica
+                </button>
             </div>
         </div>
     </footer>
 
     <script>
-        // Key for localStorage
+        // Chaves LocalStorage
         const STORAGE_KEY = 'SOROCABA_CARAVANAS_DATA_STORE';
+        const CLOUD_API_KEY = 'SOROCABA_CLOUD_API_URL';
 
-        // Mock Data reflecting typical parishes/churches in Sorocaba region for instant usability
+        // Dados estáticos de demonstração inicial
         const defaultMockData = [
             { id: "1", cenaculo: "Catedral Sorocaba", onibus: 5, local: "Av. Dom Aguirre, 100 - Centro", parada: "Nenhuma", horario: "05:30" },
             { id: "2", cenaculo: "Itavuvu", onibus: 3, local: "Av. Itavuvu, 2300 - Zona Norte", parada: "Posto Barbosa", horario: "05:45" },
@@ -366,49 +417,153 @@
             { id: "10", cenaculo: "Cajuru", onibus: 1, local: "Rua Paraná, Quadra Central", parada: "Trevo do Éden", horario: "05:25" }
         ];
 
-        // App state
         let caravanData = [];
         let currentlySelectedId = null;
         let isUsingUploadedFile = false;
+        let cloudApiUrl = "";
+        let autoRefreshInterval = null;
+        let countdownSeconds = 15;
+        let countdownInterval = null;
 
-        // Initialize App on load
+        // Custom Confirm dialog helper
+        let confirmCallback = null;
+
         window.onload = function() {
+            // Verifica parâmetro da API na URL (link rápido WhatsApp)
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryApi = urlParams.get('api');
+            if (queryApi) {
+                localStorage.setItem(CLOUD_API_KEY, queryApi);
+                cloudApiUrl = queryApi;
+                // Remove o parâmetro da barra de endereços para ficar limpo
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                cloudApiUrl = localStorage.getItem(CLOUD_API_KEY) || "";
+            }
+
+            document.getElementById('cloud-api-url').value = cloudApiUrl;
+            
             initApp();
             
-            // Add Drag and Drop listeners to document to capture SOROCABA.xlsx drops!
+            // Drag and drop listeners
             const dropZone = document.body;
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); });
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                     processExcelFile(files[0]);
                 }
             });
+
+            document.getElementById('excel-file-input').addEventListener('change', handleFileSelect);
+            
+            // Setup custom modal listeners
+            document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+                closeConfirmModal();
+                if (confirmCallback) confirmCallback(false);
+            });
+            document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+                closeConfirmModal();
+                if (confirmCallback) confirmCallback(true);
+            });
         };
 
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = callback;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.remove('scale-95');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.add('scale-95');
+        }
+
         function initApp() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                try {
-                    caravanData = JSON.parse(stored);
-                    const fileFlag = localStorage.getItem(STORAGE_KEY + '_file');
-                    isUsingUploadedFile = fileFlag === 'true';
-                } catch(e) {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            if (cloudApiUrl) {
+                fetchCloudData();
+                startAutoRefresh();
+            } else {
+                document.getElementById('refresh-timer').classList.add('hidden');
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        caravanData = JSON.parse(stored);
+                        const fileFlag = localStorage.getItem(STORAGE_KEY + '_file');
+                        isUsingUploadedFile = fileFlag === 'true';
+                    } catch(e) {
+                        caravanData = [...defaultMockData];
+                        isUsingUploadedFile = false;
+                    }
+                } else {
                     caravanData = [...defaultMockData];
                     isUsingUploadedFile = false;
                 }
-            } else {
-                caravanData = [...defaultMockData];
-                isUsingUploadedFile = false;
+                updateDataVisuals();
+                showToast("Inicializado em modo offline/local.", "info");
+            }
+        }
+
+        function startAutoRefresh() {
+            const timerEl = document.getElementById('refresh-timer');
+            timerEl.classList.remove('hidden');
+            
+            countdownSeconds = 15;
+            timerEl.textContent = `Sync em ${countdownSeconds}s`;
+
+            countdownInterval = setInterval(() => {
+                countdownSeconds--;
+                if (countdownSeconds <= 0) {
+                    countdownSeconds = 15;
+                }
+                timerEl.textContent = `Sync em ${countdownSeconds}s`;
+            }, 1000);
+
+            autoRefreshInterval = setInterval(() => {
+                fetchCloudData(true);
+            }, 15000);
+        }
+
+        function fetchCloudData(isSilent = false) {
+            if (!isSilent) {
+                showToast("Buscando dados no Google Sheets...", "info");
+                document.getElementById('live-indicator').className = "w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse";
+                document.getElementById('live-indicator-text').textContent = "Atualizando dados...";
             }
 
-            updateDataVisuals();
-            showToast("Sistema inicializado com sucesso!", "success");
+            fetch(cloudApiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const previousSelection = currentlySelectedId;
+                        caravanData = data.sort((a, b) => a.cenaculo.localeCompare(b.cenaculo));
+                        isUsingUploadedFile = false;
+                        updateDataVisuals();
+                        if (previousSelection && caravanData.some(item => item.id === previousSelection)) {
+                            selectChurch(previousSelection);
+                        }
+                        if (!isSilent) {
+                            showToast("Dados sincronizados com sucesso!", "success");
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro de sincronização:", err);
+                    if (!isSilent) {
+                        showToast("Erro ao conectar com a nuvem. Carregando dados locais.", "error");
+                        const stored = localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultMockData);
+                        caravanData = JSON.parse(stored);
+                        updateDataVisuals();
+                    }
+                });
         }
 
         function updateDataVisuals() {
@@ -421,40 +576,77 @@
         function updateSourceBadge() {
             const badge = document.getElementById('data-source-badge');
             const banner = document.getElementById('upload-banner');
-            if (isUsingUploadedFile) {
+            const title = document.getElementById('source-title');
+            const description = document.getElementById('source-description');
+            const footerSync = document.getElementById('footer-sync-status');
+            const liveIndicator = document.getElementById('live-indicator');
+            const liveIndicatorText = document.getElementById('live-indicator-text');
+            const uploadToCloudBtn = document.getElementById('btn-upload-to-cloud');
+
+            if (cloudApiUrl) {
                 badge.className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 animate-pulse";
-                badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> Planilha Ativa (SOROCABA.xlsx)`;
-                banner.className = "bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+                badge.innerHTML = `<i class="fa-solid fa-cloud-bolt mr-1 text-emerald-600"></i> Google Sheets Ativo`;
+                banner.className = "bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+                title.textContent = "Sincronização em tempo real ativada!";
+                description.innerHTML = "Todas as alterações são enviadas e recebidas da nuvem automaticamente. Envie o link para a sua equipe começar a colaborar!";
+                footerSync.textContent = "Nuvem ativa (Google Sheets)";
+                liveIndicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                liveIndicatorText.textContent = "Sincronizado na Nuvem";
+                
+                if (isUsingUploadedFile) {
+                    uploadToCloudBtn.classList.remove('hidden');
+                } else {
+                    uploadToCloudBtn.classList.add('hidden');
+                }
+                
+                document.getElementById('modal-share-container').classList.remove('hidden');
+                document.getElementById('share-link-input').value = getShareableLink();
+            } else if (isUsingUploadedFile) {
+                badge.className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200";
+                badge.innerHTML = `<i class="fa-solid fa-file-excel mr-1 text-blue-600"></i> Planilha Local (XLSX)`;
+                banner.className = "bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+                title.textContent = "Planilha importada com sucesso";
+                description.innerHTML = "Editando arquivo localmente. Adicione uma API do Google Sheets no botão <strong>Sincronizar Nuvem</strong> para salvar permanentemente de forma global.";
+                footerSync.textContent = "Editando Planilha Local";
+                liveIndicator.className = "w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse";
+                liveIndicatorText.textContent = "Editando arquivo localmente";
+                
+                const savedApiUrl = localStorage.getItem(CLOUD_API_KEY);
+                if (savedApiUrl) {
+                    uploadToCloudBtn.classList.remove('hidden');
+                } else {
+                    uploadToCloudBtn.classList.add('hidden');
+                }
+                document.getElementById('modal-share-container').classList.add('hidden');
             } else {
                 badge.className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200";
-                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i> Dados de Demonstração`;
-                banner.className = "bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+                badge.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1 text-amber-600"></i> Modo Demo`;
+                banner.className = "bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 smooth-transition";
+                title.textContent = "Utilizando base offline de demonstração";
+                description.innerHTML = "Conecte sua planilha Google no botão <strong>Sincronizar Nuvem</strong> ou suba seu arquivo <strong>SOROCABA.xlsx</strong> para editar.";
+                footerSync.textContent = "Modo offline demonstrativo";
+                liveIndicator.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+                liveIndicatorText.textContent = "Sem conexão ativa";
+                uploadToCloudBtn.classList.add('hidden');
+                document.getElementById('modal-share-container').classList.add('hidden');
             }
         }
 
-        // Calculate and update top statistics
         function updateStatistics() {
             document.getElementById('stat-total-churches').textContent = caravanData.length;
-            
             const totalBuses = caravanData.reduce((acc, curr) => acc + (Number(curr.onibus) || 0), 0);
             document.getElementById('stat-total-buses').textContent = totalBuses;
-
-            const definedPlaces = caravanData.filter(item => item.local && item.local.trim().toLowerCase() !== 'nenhum' && item.local.trim() !== '').length;
+            const definedPlaces = caravanData.filter(item => item.local && item.local.trim() !== '' && item.local.trim().toLowerCase() !== 'nenhum').length;
             document.getElementById('stat-defined-places').textContent = definedPlaces;
-
             const definedTimes = caravanData.filter(item => item.horario && item.horario.trim() !== '').length;
             document.getElementById('stat-defined-times').textContent = definedTimes;
         }
 
         function populateChurchDropdown() {
             const selector = document.getElementById('church-selector');
-            // Retain placeholder
             selector.innerHTML = '<option value="" disabled selected>-- Escolha um Cenáculo --</option>';
 
-            // Sort alphabetically for clean search experience
-            const sorted = [...caravanData].sort((a, b) => a.cenaculo.localeCompare(b.cenaculo));
-
-            sorted.forEach(item => {
+            caravanData.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.id;
                 opt.textContent = item.cenaculo;
@@ -471,63 +663,48 @@
             
             caravanData.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = `hover:bg-slate-50 cursor-pointer smooth-transition ${currentlySelectedId === item.id ? 'bg-brand-50/70 border-l-4 border-l-brand-600' : ''}`;
+                tr.className = `hover:bg-slate-50 cursor-pointer smooth-transition ${currentlySelectedId === item.id ? 'bg-brand-50 border-l-4 border-l-brand-600' : ''}`;
                 tr.onclick = () => selectChurch(item.id);
 
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHTML(item.cenaculo)}</td>
-                    <td class="py-3 px-4 text-center">
-                        <span class="px-2.5 py-1 text-xs font-bold rounded-full ${item.onibus > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-400'}">
+                    <td class="py-2 px-3 font-semibold text-slate-800">${escapeHTML(item.cenaculo)}</td>
+                    <td class="py-2 px-2 text-center">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${item.onibus > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-400'}">
                             ${item.onibus}
                         </span>
                     </td>
-                    <td class="py-3 px-4 text-slate-600 truncate max-w-[150px]" title="${escapeHTML(item.local)}">${escapeHTML(item.local || '-')}</td>
-                    <td class="py-3 px-4 text-slate-600 truncate max-w-[120px]" title="${escapeHTML(item.parada)}">${escapeHTML(item.parada || '-')}</td>
-                    <td class="py-3 px-4 text-slate-700 font-medium">${escapeHTML(item.horario || '-')}</td>
-                    <td class="py-3 px-3 text-right">
-                        <button onclick="event.stopPropagation(); selectChurch('${item.id}')" class="text-brand-600 hover:text-brand-800 font-bold text-xs bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded smooth-transition">
-                            Consultar
-                        </button>
-                    </td>
+                    <td class="py-2 px-3 text-slate-500 truncate max-w-[140px]" title="${escapeHTML(item.local)}">${escapeHTML(item.local || '-')}</td>
+                    <td class="py-2 px-3 text-slate-500 truncate max-w-[120px]" title="${escapeHTML(item.parada)}">${escapeHTML(item.parada || '-')}</td>
+                    <td class="py-2 px-3 text-slate-700 font-semibold">${escapeHTML(item.horario || '-')}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('displayed-rows').textContent = caravanData.length;
-            filterTable(); // Re-apply search filter if user is actively searching
+            filterTable();
         }
 
         function selectChurch(id) {
             currentlySelectedId = id;
             
-            // Mark active row visual styles
             const rows = document.querySelectorAll('#database-table-body tr');
             rows.forEach((row, idx) => {
                 const rowItem = caravanData[idx];
                 if (rowItem && rowItem.id === id) {
-                    row.className = "hover:bg-slate-50 cursor-pointer smooth-transition bg-brand-50/70 border-l-4 border-l-brand-600";
+                    row.className = "hover:bg-slate-50 cursor-pointer smooth-transition bg-brand-50 border-l-4 border-l-brand-600";
                 } else {
                     row.className = "hover:bg-slate-50 cursor-pointer smooth-transition";
                 }
             });
 
-            // Update selectors
-            const selector = document.getElementById('church-selector');
-            selector.value = id;
+            document.getElementById('church-selector').value = id;
 
-            // Load to edit form
             const item = caravanData.find(d => d.id === id);
             if (item) {
-                // Enable card container
-                const card = document.getElementById('query-result-card');
-                card.classList.remove('opacity-60', 'pointer-events-none');
-                
+                document.getElementById('query-result-card').classList.remove('opacity-60', 'pointer-events-none');
                 document.getElementById('placeholder-message').classList.add('hidden');
-                
-                const form = document.getElementById('edit-form');
-                form.classList.remove('hidden');
+                document.getElementById('edit-form').classList.remove('hidden');
 
-                // Fill inputs
                 document.getElementById('active-church-name').textContent = item.cenaculo;
                 document.getElementById('current-buses-badge').textContent = `${item.onibus} ônibus`;
                 document.getElementById('input-buses').value = item.onibus;
@@ -535,10 +712,250 @@
                 document.getElementById('input-stop').value = item.parada || '';
                 document.getElementById('input-time').value = item.horario || '';
 
-                // Scroll to query card if on mobile
                 if (window.innerWidth < 1024) {
-                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    document.getElementById('query-result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
+            }
+        }
+
+        function saveCurrentChurchData(e) {
+            e.preventDefault();
+            if (!currentlySelectedId) return;
+
+            const itemIndex = caravanData.findIndex(d => d.id === currentlySelectedId);
+            if (itemIndex !== -1) {
+                const oldItem = caravanData[itemIndex];
+                const updatedItem = {
+                    id: currentlySelectedId,
+                    cenaculo: oldItem.cenaculo,
+                    onibus: parseInt(document.getElementById('input-buses').value) || 0,
+                    local: document.getElementById('input-location').value.trim(),
+                    parada: document.getElementById('input-stop').value.trim(),
+                    horario: document.getElementById('input-time').value.trim()
+                };
+
+                const saveBtn = document.getElementById('save-button');
+                const btnSpan = saveBtn.querySelector('span');
+                const originalHTML = saveBtn.innerHTML;
+
+                saveBtn.disabled = true;
+                btnSpan.textContent = "Gravando alteração...";
+
+                if (cloudApiUrl) {
+                    fetch(cloudApiUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedItem)
+                    })
+                    .then(() => {
+                        caravanData[itemIndex] = updatedItem;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
+                        updateDataVisuals();
+                        selectChurch(currentlySelectedId);
+                        showToast(`Sincronizado na Nuvem: "${updatedItem.cenaculo}"`, "success");
+                    })
+                    .catch(err => {
+                        console.error("Erro ao sincronizar na nuvem:", err);
+                        showToast("Erro ao gravar na nuvem. Salvando offline.", "error");
+                        saveLocallyOnly(itemIndex, updatedItem);
+                    })
+                    .finally(() => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalHTML;
+                    });
+                } else {
+                    saveLocallyOnly(itemIndex, updatedItem);
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalHTML;
+                }
+            }
+        }
+
+        function saveLocallyOnly(index, item) {
+            caravanData[index] = item;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
+            localStorage.setItem(STORAGE_KEY + '_file', isUsingUploadedFile ? 'true' : 'false');
+            updateDataVisuals();
+            selectChurch(currentlySelectedId);
+            showToast(`Salvo offline: "${item.cenaculo}"`, "success");
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                processExcelFile(files[0]);
+            }
+        }
+
+        function processExcelFile(file) {
+            showToast("Analisando planilha...", "info");
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                    if (rawJson.length === 0) {
+                        showToast("Planilha sem dados!", "error");
+                        return;
+                    }
+
+                    const parsedData = smartMapExcel(rawJson);
+                    if (parsedData.length > 0) {
+                        caravanData = parsedData.sort((a, b) => a.cenaculo.localeCompare(b.cenaculo));
+                        isUsingUploadedFile = true;
+                        currentlySelectedId = null;
+
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
+                        localStorage.setItem(STORAGE_KEY + '_file', 'true');
+
+                        updateDataVisuals();
+                        showToast(`${parsedData.length} igrejas carregadas localmente!`, "success");
+
+                        document.getElementById('edit-form').classList.add('hidden');
+                        document.getElementById('placeholder-message').classList.remove('hidden');
+                        document.getElementById('query-result-card').classList.add('opacity-60', 'pointer-events-none');
+                    } else {
+                        showToast("Estrutura incompatível. Verifique as colunas.", "error");
+                    }
+                } catch (error) {
+                    console.error("Erro no processamento:", error);
+                    showToast("Ocorreu um erro ao ler o arquivo Excel.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function smartMapExcel(jsonList) {
+            const firstRowKeys = Object.keys(jsonList[0]);
+
+            let colCenaculo = firstRowKeys.find(k => k.toLowerCase().match(/(cenaculo|cenáculo|igreja|localidade|paroquia|nome)/)) || firstRowKeys[0];
+            let colOnibus = firstRowKeys.find(k => k.toLowerCase().match(/(onibus|ônibus|qtd|quantidade|veiculo|veículo)/)) || firstRowKeys[1];
+            let colLocal = firstRowKeys.find(k => k.toLowerCase().match(/(local|saida|saída|partida|embarque)/)) || firstRowKeys[2];
+            let colParada = firstRowKeys.find(k => k.toLowerCase().match(/(parada|adicional|intermediario)/)) || firstRowKeys[3];
+            let colHorario = firstRowKeys.find(k => k.toLowerCase().match(/(horario|horário|hora)/)) || firstRowKeys[4];
+
+            const output = [];
+            jsonList.forEach((row, idx) => {
+                const church = row[colCenaculo] ? String(row[colCenaculo]).trim() : '';
+                if (!church) return;
+
+                let buses = 0;
+                if (row[colOnibus] !== undefined) {
+                    const val = parseInt(row[colOnibus]);
+                    if (!isNaN(val)) buses = val;
+                }
+
+                output.push({
+                    id: String(idx + 1),
+                    cenaculo: church,
+                    onibus: buses,
+                    local: row[colLocal] ? String(row[colLocal]).trim() : '',
+                    parada: row[colParada] ? String(row[colParada]).trim() : '',
+                    horario: row[colHorario] ? String(row[colHorario]).trim() : ''
+                });
+            });
+            return output;
+        }
+
+        function getShareableLink() {
+            const base = window.location.origin + window.location.pathname;
+            return cloudApiUrl ? `${base}?api=${encodeURIComponent(cloudApiUrl)}` : base;
+        }
+
+        function copyShareLink() {
+            const url = getShareableLink();
+            if (!cloudApiUrl) {
+                showToast("Ative a sincronização em nuvem antes de compartilhar o link!", "error");
+                toggleCloudModal(true);
+                return;
+            }
+
+            const el = document.createElement("input");
+            document.body.appendChild(el);
+            el.value = url;
+            el.select();
+            document.execCommand("copy");
+            document.body.removeChild(el);
+
+            showToast("Link copiado! Compartilhe no WhatsApp para conexão automática.", "success");
+        }
+
+        function uploadLocalExcelToCloud() {
+            const savedApi = localStorage.getItem(CLOUD_API_KEY);
+            if (!savedApi) {
+                showToast("Conecte na nuvem antes de realizar o envio!", "error");
+                return;
+            }
+
+            showConfirm(
+                "Substituir Dados na Nuvem?", 
+                "Isso apagará todas as informações salvas no Google Sheets e as substituirá inteiramente por esta planilha local que você carregou. Deseja prosseguir?",
+                (confirmed) => {
+                    if (!confirmed) return;
+
+                    showToast("Enviando base para o Google Sheets...", "info");
+                    const btn = document.getElementById('btn-upload-to-cloud');
+                    btn.disabled = true;
+                    btn.textContent = "Enviando base de dados...";
+
+                    fetch(savedApi, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: "bulk_import",
+                            data: caravanData
+                        })
+                    })
+                    .then(() => {
+                        cloudApiUrl = savedApi;
+                        isUsingUploadedFile = false;
+                        localStorage.setItem(STORAGE_KEY + '_file', 'false');
+                        fetchCloudData();
+                        showToast("Planilha salva na Nuvem com sucesso!", "success");
+                    })
+                    .catch(err => {
+                        console.error("Erro no upload em lote:", err);
+                        showToast("Falha ao salvar planilha na nuvem.", "error");
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.textContent = "Salvar esta Planilha Carregada na Nuvem (Google Sheets)";
+                    });
+                }
+            );
+        }
+
+        function toggleCloudModal(show) {
+            const modal = document.getElementById('cloud-modal');
+            if (show) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-95');
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.add('scale-95');
+            }
+        }
+
+        function saveCloudApiAndConnect() {
+            const inputVal = document.getElementById('cloud-api-url').value.trim();
+            if (inputVal) {
+                localStorage.setItem(CLOUD_API_KEY, inputVal);
+                cloudApiUrl = inputVal;
+                toggleCloudModal(false);
+                initApp();
+            } else {
+                localStorage.removeItem(CLOUD_API_KEY);
+                cloudApiUrl = "";
+                toggleCloudModal(false);
+                initApp();
+                showToast("Conexão de nuvem removida.", "info");
             }
         }
 
@@ -556,51 +973,17 @@
             input.value = val;
         }
 
-        function saveCurrentChurchData(e) {
-            e.preventDefault();
-            if (!currentlySelectedId) return;
-
-            const itemIndex = caravanData.findIndex(d => d.id === currentlySelectedId);
-            if (itemIndex !== -1) {
-                const oldItem = caravanData[itemIndex];
-                
-                const updatedItem = {
-                    ...oldItem,
-                    onibus: parseInt(document.getElementById('input-buses').value) || 0,
-                    local: document.getElementById('input-location').value.trim(),
-                    parada: document.getElementById('input-stop').value.trim(),
-                    horario: document.getElementById('input-time').value.trim()
-                };
-
-                // Update array state
-                caravanData[itemIndex] = updatedItem;
-                
-                // Save state to localStorage
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
-                localStorage.setItem(STORAGE_KEY + '_file', isUsingUploadedFile ? 'true' : 'false');
-
-                // Update views
-                updateDataVisuals();
-                
-                // Keep the active edit state fresh
-                selectChurch(currentlySelectedId);
-
-                showToast(`Dados de "${updatedItem.cenaculo}" salvos localmente!`, "success");
-            }
-        }
-
-        // Filter Table on Search Input
         function filterTable() {
             const query = document.getElementById('table-search').value.toLowerCase().trim();
             const rows = document.querySelectorAll('#database-table-body tr');
             let visibleCount = 0;
 
-            rows.forEach((row, index) => {
-                const item = caravanData[index];
+            rows.forEach((row, idx) => {
+                const item = caravanData[idx];
                 if (!item) return;
 
-                const textToSearch = `${item.cenaculo} ${item.local} ${item.parada} ${item.horario} ${item.onibus}`.toLowerCase();
-                if (textToSearch.includes(query)) {
+                const searchableText = `${item.cenaculo} ${item.local} ${item.parada} ${item.horario}`.toLowerCase();
+                if (searchableText.includes(query)) {
                     row.classList.remove('hidden');
                     visibleCount++;
                 } else {
@@ -608,7 +991,6 @@
                 }
             });
 
-            // Handle empty state visibility
             const emptyState = document.getElementById('table-empty-state');
             if (visibleCount === 0) {
                 emptyState.classList.remove('hidden');
@@ -621,109 +1003,11 @@
             document.getElementById('displayed-rows').textContent = visibleCount;
         }
 
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            if (files.length > 0) {
-                processExcelFile(files[0]);
-            }
-        }
-
-        function processExcelFile(file) {
-            showToast("Lendo arquivo Excel...", "info");
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    // Grab the first sheet
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-
-                    if (rawJson.length === 0) {
-                        showToast("Planilha vazia!", "error");
-                        return;
-                    }
-
-                    // Smart map columns based on dynamic headers
-                    const parsedData = smartMapExcelHeaders(rawJson);
-                    
-                    if (parsedData.length > 0) {
-                        caravanData = parsedData;
-                        isUsingUploadedFile = true;
-                        currentlySelectedId = null;
-
-                        // Save loaded state
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(caravanData));
-                        localStorage.setItem(STORAGE_KEY + '_file', 'true');
-
-                        // Reset UI with new data
-                        updateDataVisuals();
-
-                        // Close form editor until user chooses a new church
-                        document.getElementById('edit-form').classList.add('hidden');
-                        document.getElementById('placeholder-message').classList.remove('hidden');
-                        document.getElementById('query-result-card').classList.add('opacity-60', 'pointer-events-none');
-
-                        showToast(`Sucesso! ${parsedData.length} igrejas importadas.`, "success");
-                    } else {
-                        showToast("Colunas principais não encontradas no Excel.", "error");
-                    }
-
-                } catch (error) {
-                    console.error("Excel Read Error: ", error);
-                    showToast("Erro ao processar o Excel. Verifique a formatação.", "error");
-                }
-            };
-
-            reader.readAsArrayBuffer(file);
-        }
-
-        // Normalizer helper to detect headers like 'Cenáculo', 'ônibus', 'local de saída' etc.
-        function smartMapExcelHeaders(jsonList) {
-            const result = [];
-            const firstRowKeys = Object.keys(jsonList[0]);
-
-            // Find best matches for our needed columns
-            let keyCenaculo = firstRowKeys.find(k => k.toLowerCase().match(/(cenaculo|cenáculo|igreja|paroquia|paróquia|grupo|localidade|nome)/)) || firstRowKeys[0];
-            let keyOnibus = firstRowKeys.find(k => k.toLowerCase().match(/(onibus|ônibus|qtd|quantidade|veiculo|veículo|buses)/)) || firstRowKeys[1];
-            let keyLocal = firstRowKeys.find(k => k.toLowerCase().match(/(local|saida|saída|partida|origem|embarque|ponto)/)) || firstRowKeys[2];
-            let keyParada = firstRowKeys.find(k => k.toLowerCase().match(/(parada|adicional|escala|conexao|conexão|intermediario)/)) || firstRowKeys[3];
-            let keyHorario = firstRowKeys.find(k => k.toLowerCase().match(/(horario|horário|hora|saída_hora|time)/)) || firstRowKeys[4];
-
-            jsonList.forEach((row, index) => {
-                // Ensure there is a valid church name, skip empty entries
-                const churchName = row[keyCenaculo] ? String(row[keyCenaculo]).trim() : '';
-                if (!churchName) return;
-
-                // Safe parsing of bus count
-                let busValue = 0;
-                if (row[keyOnibus] !== undefined) {
-                    const parsedNum = parseInt(row[keyOnibus]);
-                    if (!isNaN(parsedNum)) busValue = parsedNum;
-                }
-
-                result.push({
-                    id: String(index + 1),
-                    cenaculo: churchName,
-                    onibus: busValue,
-                    local: row[keyLocal] ? String(row[keyLocal]).trim() : '',
-                    parada: row[keyParada] ? String(row[keyParada]).trim() : '',
-                    horario: row[keyHorario] ? String(row[keyHorario]).trim() : ''
-                });
-            });
-
-            return result;
-        }
-
         function exportToExcel() {
             try {
-                showToast("Gerando nova planilha...", "info");
-
-                // Map clean Portuguese column titles for the export output
-                const formattedData = caravanData.map(item => ({
+                showToast("Gerando arquivo Excel...", "info");
+                const exportData = caravanData.map(item => ({
+                    "id": item.id,
                     "Cenáculo": item.cenaculo,
                     "Quantidade de Ônibus": item.onibus,
                     "Local de Saída": item.local,
@@ -731,89 +1015,75 @@
                     "Horário de Saída": item.horario
                 }));
 
-                const worksheet = XLSX.utils.json_to_sheet(formattedData);
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Caravanas Sorocaba");
 
-                // Auto-adjust column widths dynamically for beauty
-                const maxColWidths = [];
-                formattedData.forEach(row => {
-                    Object.keys(row).forEach((key, colIndex) => {
-                        const cellValue = row[key] ? row[key].toString() : '';
-                        const headerLength = key.length;
-                        const cellLength = cellValue.length;
-                        const finalLen = Math.max(headerLength, cellLength) + 3;
-                        maxColWidths[colIndex] = Math.max(maxColWidths[colIndex] || 10, finalLen);
-                    });
-                });
-                worksheet['!cols'] = maxColWidths.map(w => ({ wch: w }));
-
-                // Save to user disk
                 XLSX.writeFile(workbook, "SOROCABA_Atualizado.xlsx");
-                showToast("Arquivo exportado com sucesso!", "success");
-
+                showToast("Download iniciado com sucesso!", "success");
             } catch (err) {
-                console.error("Export Error:", err);
-                showToast("Erro ao exportar base atualizada.", "error");
+                console.error("Erro na exportação:", err);
+                showToast("Erro ao exportar base.", "error");
             }
         }
 
-        function resetData() {
-            if (confirm("Deseja realmente apagar todas as alterações locais e voltar para os dados padrão?")) {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(STORAGE_KEY + '_file');
-                currentlySelectedId = null;
-                isUsingUploadedFile = false;
-                initApp();
-                
-                // Clear and reset UI Form back to placeholder
-                document.getElementById('edit-form').classList.add('hidden');
-                document.getElementById('placeholder-message').classList.remove('hidden');
-                document.getElementById('query-result-card').classList.add('opacity-60', 'pointer-events-none');
-            }
+        function resetDataToDefault() {
+            showConfirm(
+                "Restaurar Padrão de Fábrica?", 
+                "Isso redefinirá todas as configurações locais do navegador e removerá a API da Nuvem. Deseja prosseguir?",
+                (confirmed) => {
+                    if (!confirmed) return;
+
+                    localStorage.removeItem(STORAGE_KEY);
+                    localStorage.removeItem(STORAGE_KEY + '_file');
+                    localStorage.removeItem(CLOUD_API_KEY);
+                    cloudApiUrl = "";
+                    currentlySelectedId = null;
+                    isUsingUploadedFile = false;
+
+                    document.getElementById('cloud-api-url').value = "";
+                    document.getElementById('edit-form').classList.add('hidden');
+                    document.getElementById('placeholder-message').classList.remove('hidden');
+                    document.getElementById('query-result-card').classList.add('opacity-60', 'pointer-events-none');
+
+                    initApp();
+                }
+            );
         }
 
         function showToast(message, type = "info") {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             
-            let typeClasses = "bg-slate-800 text-white border-slate-700";
+            let colorClasses = "bg-slate-800 text-white border-slate-700";
             let icon = '<i class="fa-solid fa-bell"></i>';
 
             if (type === "success") {
-                typeClasses = "bg-emerald-50 border border-emerald-200 text-emerald-900";
+                colorClasses = "bg-emerald-50 border border-emerald-200 text-emerald-900";
                 icon = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
             } else if (type === "error") {
-                typeClasses = "bg-red-50 border border-red-200 text-red-900";
+                colorClasses = "bg-red-50 border border-red-200 text-red-900";
                 icon = '<i class="fa-solid fa-circle-exclamation text-red-600"></i>';
             } else if (type === "info") {
-                typeClasses = "bg-brand-50 border border-brand-200 text-brand-900";
-                icon = '<i class="fa-solid fa-circle-info text-brand-600"></i>';
+                colorClasses = "bg-blue-50 border border-blue-200 text-blue-950";
+                icon = '<i class="fa-solid fa-circle-info text-blue-600"></i>';
             }
 
-            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm max-w-sm pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300 ${typeClasses}`;
+            toast.className = `flex items-center gap-3 px-3 py-2.5 rounded-xl shadow-lg border text-xs max-w-sm pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300 ${colorClasses}`;
             toast.innerHTML = `
-                <div class="text-base shrink-0">${icon}</div>
-                <div class="font-medium flex-grow">${message}</div>
-                <button class="text-slate-400 hover:text-slate-600 focus:outline-none shrink-0" onclick="this.parentElement.remove()">
-                    <i class="fa-solid fa-xmark text-xs"></i>
+                <div class="text-sm shrink-0">${icon}</div>
+                <div class="font-semibold flex-grow leading-snug">${message}</div>
+                <button class="text-slate-400 hover:text-slate-600" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark text-[10px]"></i>
                 </button>
             `;
 
             container.appendChild(toast);
-
-            // Animate In
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            // Auto-remove after 4.5 seconds
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-1');
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 4500);
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 3500);
         }
 
         function escapeHTML(str) {
@@ -825,6 +1095,19 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
+        // Exportando funções globais para o HTML inline
+        window.onChurchSelected = onChurchSelected;
+        window.adjustBuses = adjustBuses;
+        window.saveCurrentChurchData = saveCurrentChurchData;
+        window.filterTable = filterTable;
+        window.exportToExcel = exportToExcel;
+        window.toggleCloudModal = toggleCloudModal;
+        window.saveCloudApiAndConnect = saveCloudApiAndConnect;
+        window.copyShareLink = copyShareLink;
+        window.uploadLocalExcelToCloud = uploadLocalExcelToCloud;
+        window.resetDataToDefault = resetDataToDefault;
+        window.selectChurch = selectChurch;
     </script>
 </body>
 </html>
